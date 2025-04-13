@@ -1,0 +1,84 @@
+<!-- admin-dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js"></script>
+</head>
+<body>
+    <h2>Admin Dashboard</h2>
+    <div id="products"></div>
+    <h3>Add Product</h3>
+    <form id="addProductForm">
+        <input type="text" id="title" placeholder="Product Title" required><br>
+        <input type="number" id="price" placeholder="Product Price" required><br>
+        <input type="url" id="image" placeholder="Product Image URL" required><br>
+        <button type="submit">Add Product</button>
+    </form>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Check if admin
+        if (sessionStorage.getItem('role') !== 'admin') {
+            window.location.href = 'user-dashboard.html';
+        }
+
+        // Fetch and display products
+        db.ref('products').on('value', snapshot => {
+            const products = snapshot.val();
+            const productDiv = document.getElementById('products');
+            productDiv.innerHTML = '';
+            for (const productId in products) {
+                const product = products[productId];
+                const productHTML = `
+                    <div>
+                        <h4>${product.title}</h4>
+                        <p>Price: $${product.price}</p>
+                        <img src="${product.image}" width="100">
+                        <button onclick="deleteProduct('${productId}')">Delete</button>
+                    </div>
+                `;
+                productDiv.innerHTML += productHTML;
+            }
+        });
+
+        // Add product
+        document.getElementById('addProductForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const title = document.getElementById('title').value;
+            const price = document.getElementById('price').value;
+            const image = document.getElementById('image').value;
+
+            const newProductKey = db.ref('products').push().key;
+
+            db.ref('products/' + newProductKey).set({
+                title: title,
+                price: price,
+                image: image
+            });
+
+            alert("Product added successfully!");
+        });
+
+        // Delete product
+        function deleteProduct(productId) {
+            db.ref('products/' + productId).remove();
+        }
+    </script>
+</body>
+</html>
